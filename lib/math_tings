@@ -1,0 +1,80 @@
+import 'dart:io';
+
+import 'dart:math';
+
+const double BASE_INVEST = 0.75;
+const INDEXES = ["DowJones", "FF49", "FTSE100", "NASDAQ", "SP500"];
+const VOLATILITIES = [0.024601, 0.025170, 0.026865, 0.029543, 0.030055];
+const WEEKLY_RETURNS = [.002885,.004016,.002508,.003606,.002546];
+const SAMPLE_SIZE = [1363,2325,717,596,595];
+const Z_SCORES = [1.645, 1.036];
+
+
+var inputMoney;
+var riskTolerance;
+var salary;
+var necessarySpending;
+var cRisk;
+var timeInMarket;
+
+void main() {
+  print("Enter annual salary (after tax)");
+  salary = double.parse(stdin.readLineSync()!);
+  print("Enter how much you spend a year (everything)");
+  inputMoney = salary - double.parse(stdin.readLineSync()!);
+  print("Enter risk tolerance (0-10)");
+  riskTolerance = double.parse(stdin.readLineSync()!);
+
+  double inputProportion = salary / inputMoney;
+
+  //cRisk = riskTolerance * (1 / 5.0) * inputProportion * (1 / 5.0);
+  cRisk = riskTolerance;
+
+  var moneyIntoMarket = inputMoney * BASE_INVEST;
+  if(moneyIntoMarket > inputMoney){
+    moneyIntoMarket = inputMoney;
+  }
+
+  print("Money into market: ");
+  print(moneyIntoMarket);
+
+  var splits = [0.0,0.0,0.0,0.0];
+  for (int i = 0; i < 4; i++){
+    splits[i] = (VOLATILITIES[i] - VOLATILITIES[i+1])/2.0 + VOLATILITIES[i];
+  }
+
+  double num = cRisk * (0.0005454) + VOLATILITIES[0];
+  String choice = INDEXES[4];
+  int choiceIndex = 0;
+  for (int i = 0; i < 4; i++) {
+    if (num < splits[i]) {
+      choice = INDEXES[i];
+      choiceIndex = i;
+      break;
+    }
+  }
+
+  print(choice);
+
+  print("How long will this investment be in the market: ");
+  timeInMarket = double.parse(stdin.readLineSync()!);
+  
+  var expectedValue = (moneyIntoMarket) * pow(1 + WEEKLY_RETURNS[4], timeInMarket);
+  print(expectedValue);
+
+  var newStd = pow(1 + VOLATILITIES[choiceIndex], timeInMarket)-1;
+
+  //var expected2 = getEstimateFromZ(expectedValue, newStd, SAMPLE_SIZE[choiceIndex], Z_SCORES[0]);
+  var expected2 = getEstimateFromZ(expectedValue, newStd, timeInMarket, Z_SCORES[0]);
+
+  var test_statistic = (expectedValue - expected2).abs();
+  //var lowerBound = expectedValue - test_statistic;
+  //var upperBound = expectedValue + test_statistic;
+
+  //print(lowerBound);
+  //print(upperBound);
+}
+
+double getEstimateFromZ(var mean, var std, var n, var z){
+  return -(z*sqrt(n))/std+mean;
+}
